@@ -1,3 +1,5 @@
 // this is a comment
 (( )){} // grouping stuff
 !*+-/=<> <= == // operators
+"blablabla" {}
+343 3.14 5556

@@ -1,4 +1,24 @@
 use crate::token::{Token, TokenType};
+use phf::phf_map;
+
+static KEYWORDS: phf::Map<&'static str, TokenType> = phf_map! {
+  "and" => TokenType::AND,
+  "class" => TokenType::CLASS,
+  "else" => TokenType::ELSE,
+  "false" => TokenType::FALSE,
+  "for" => TokenType::FOR,
+  "fun" => TokenType::FUN,
+  "if" => TokenType::IF,
+  "nil" => TokenType::NIL,
+  "or" => TokenType::OR,
+  "print" => TokenType::PRINT,
+  "return" => TokenType::RETURN,
+  "super" => TokenType::SUPER,
+  "this" => TokenType::THIS,
+  "true" => TokenType::TRUE,
+  "var" => TokenType::VAR,
+  "while" => TokenType::WHILE,
+};
 
 pub struct Scanner {
   source: String,
@@ -87,7 +107,16 @@ impl Scanner {
     },
     ' ' | '\r' | '\t' => (),
     '\n' => self.line += 1,
-    _ => { return Err((self.line, "Unexpected character!")) },
+    '\"' => self.make_string()?,
+    _ => {
+      if c.is_ascii_digit() {
+        self.make_number()?;
+      } else if c.is_alphabetic() || c == '_' || c == '-' {
+        self.make_identifier()?;
+      } else {
+        return Err((self.line, "Unexpected character!"))
+      }
+    },
   }
   Ok(())
  }
@@ -123,5 +152,73 @@ impl Scanner {
     return '\0';
   }
   self.source.chars().nth(self.current).unwrap()
+ }
+
+ fn peek_next(&self) -> char {
+  if self.current + 1 >= self.source.len() {
+    return '\0';
+  }
+  self.source.chars().nth(self.current + 1).unwrap()
+ }
+
+ fn make_string(&mut self) -> Result<(), (u64, &'static str)> {
+  while self.peek() != '\"' && !self.is_at_end() {
+    if self.peek() == '\n' {
+      self.line += 1;
+    }
+    self.advance();
+  }
+
+  if self.is_at_end() {
+    return Err((self.line, "Unterminated string"));
+  };
+
+  self.advance();
+
+  let value = self.source.chars()
+    .skip(self.start + 1)
+    .take(self.current - self.start - 2)
+    .collect();
+
+  self.add_token(TokenType::STRING(value));
+  Ok(())
+ }
+
+ fn make_number(&mut self) -> Result<(), (u64, &'static str)> {
+  while self.peek().is_ascii_digit() {
+    self.advance();
+  }
+  if self.peek() == '.' && self.peek_next().is_ascii_digit() {
+    self.advance();
+    while self.peek().is_ascii_digit() {
+      self.advance();
+    }
+  }
+  let value = self.source.chars()
+    .skip(self.start)
+    .take(self.current - self.start)
+    .collect::<String>();
+
+  match value.parse::<f64>() {
+    Ok(n) => self.add_token(TokenType::NUMBER(n)),
+    Err(e) => return Err((self.line, "Unrecognized number")),
+  };
+  Ok(())
+ }
+
+ fn make_identifier(&mut self) -> Result<(), (u64, &'static str)> {
+  while self.peek().is_alphanumeric() {
+    self.advance();
+  }
+  let value = self.source.chars()
+    .skip(self.start)
+    .take(self.current - self.start)
+    .collect::<String>();
+
+  match KEYWORDS.get(&value) {
+    None => self.add_token(TokenType::IDENTIFIER(value)),
+    Some(n) => self.add_token(n.clone()),
+  }
+  Ok(())
  }
 }
