@@ -1,5 +1,11 @@
 // this is a comment
 (( )){} // grouping stuff
 !*+-/=<> <= == // operators
+/* sfdsfsofksokok
+sfdsfsofksokokfsfsfs * aaa /
+/* */
+fsfsfs */
 "blablabla" {}
 343 3.14 5556
+// adadadadad
+_IDENT

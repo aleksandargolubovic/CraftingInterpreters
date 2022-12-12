@@ -101,6 +101,21 @@ impl Scanner {
         while self.peek() != '\n' && !self.is_at_end() {
           self.advance();
         }
+      } else if self.match_char('*') {
+        while !self.is_at_end() {
+          if self.peek() == '*' && self.peek_next() == '/' {
+            break;
+          }
+          println!("current char {}", self.source.chars().nth(self.current).unwrap());
+          if self.peek() == '\n' {
+            self.line += 1;
+          }
+          self.advance();
+        }
+        if !self.is_at_end() {
+          self.advance();
+          self.advance();
+        }
       } else {
         self.add_token(TokenType::SLASH);
       }
